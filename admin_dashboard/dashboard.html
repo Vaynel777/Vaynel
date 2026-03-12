@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - OpenClaw Deployment</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Liquid Glass Theme - Apple inspired */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #15152b 50%, #0f1425 100%);
+            min-height: 100vh;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* Animated background particles */
+        .particles-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        .particle {
+            position: absolute;
+            background: radial-gradient(circle, rgba(100, 200, 255, 0.5), transparent);
+            border-radius: 50%;
+            animation: float-particle linear infinite;
+        }
+
+        @keyframes float-particle {
+            0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(100px); opacity: 0; }
+        }
+
+        /* Header */
+        .header {
+            padding: 30px 40px;
+            background: rgba(20, 20, 40, 0.5);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(100, 150, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .back-button {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #00d4ff;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: rgba(0, 212, 255, 0.3);
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #00d4ff, #9d4edd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .deployment-name {
+            font-size: 18px;
+            color: #94a3b8;
+            border-left: 2px solid rgba(0, 212, 255, 0.3);
+            padding-left: 20px;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-dot.warning { background: #f59f00; }
+        .status-dot.error { background: #ef4444; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            50% { opacity: 0.8; box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+        }
+
+        /* Main content */
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        /* Health Status Bar */
+        .health-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .health-item {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .health-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #00d4ff;
+            margin: 8px 0;
+        }
+
+        .health-label {
+            font-size: 11px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        /* Glass Card */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 28px;
+            margin-bottom: 24px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(0, 212, 255, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 212, 255, 0.1);
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Guardrails Grid */
+        .guardrails-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .guardrail-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .guardrail-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #00d4ff;
+            margin-bottom: 16px;
+            text-transform: capitalize;
+        }
+
+        .guardrail-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .metric-small {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .metric-value-small {
+            font-size: 16px;
+            font-weight: 700;
+            color: #9d4edd;
+            margin: 4px 0;
+        }
+
+        .metric-label-small {
+            font-size: 10px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+        }
+
+        .latency-box {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 12px;
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .latency-box div {
+            display: flex;
+            justify-content: space-between;
+            margin: 4px 0;
+        }
+
+        /* Two-column layout for charts and audit */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 16px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+
+        /* Audit Feed */
+        .audit-feed {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 24px;
+            position: relative;
+            z-index: 1;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .audit-feed::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .audit-feed::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .audit-feed::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+        }
+
+        .audit-feed::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .audit-feed-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 16px;
+        }
+
+        .audit-item {
+            padding: 12px;
+            border-left: 3px solid rgba(0, 212, 255, 0.3);
+            margin-bottom: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-size: 12px;
+        }
+
+        .audit-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-left-color: rgba(0, 212, 255, 0.6);
+        }
+
+        .audit-time {
+            color: #64748b;
+            font-size: 10px;
+            margin-bottom: 4px;
+        }
+
+        .audit-action {
+            color: #00d4ff;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .audit-detail {
+            color: #94a3b8;
+            margin: 2px 0;
+        }
+
+        /* Model Tiers */
+        .model-tiers {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .model-tier-item {
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .model-tier-name {
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .model-tier-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .model-tier-stat {
+            text-align: right;
+        }
+
+        .model-tier-stat-value {
+            color: #00d4ff;
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .health-bar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .guardrails-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 16px;
+                align-items: flex-start;
+            }
+
+            .header-left {
+                width: 100%;
+            }
+
+            .status-bar {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+        }
+
+        /* Loading state */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background particles -->
+    <div class="particles-bg" id="particlesContainer"></div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <button class="back-button" onclick="goBack()">← Back to Master</button>
+            <div class="logo">⚙️ Admin Dashboard</div>
+            <div class="deployment-name" id="deploymentName">Loading...</div>
+        </div>
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-dot"></div>
+                <span id="statusText">Initializing...</span>
+            </div>
+            <div class="status-item">
+                <span id="syncStatus">Syncing...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="container">
+        <!-- Health Status -->
+        <div class="health-bar">
+            <div class="health-item">
+                <div class="health-label">Status</div>
+                <div class="health-value" id="healthStatus">-</div>
+            </div>
+            <div class="health-item">
+                <div class="health-label">Uptime</div>
+                <div class="health-value" id="uptimePercent">-</div>
+            </div>
+            <div class="health-item">
+                <div class="health-label">Requests/Hour</div>
+                <div class="health-value" id="requestsHour">-</div>
+            </div>
+            <div class="health-item">
+                <div class="health-label">Error Rate</div>
+                <div class="health-value" id="errorRate">-</div>
+            </div>
+            <div class="health-item">
+                <div class="health-label">Cost Today</div>
+                <div class="health-value" id="costToday">$-</div>
+            </div>
+            <div class="health-item">
+                <div class="health-label">Cost Month</div>
+                <div class="health-value" id="costMonth">$-</div>
+            </div>
+        </div>
+
+        <!-- Guardrails Overview -->
+        <div class="glass-card">
+            <div class="card-title">🛡️ Guardrails Metrics</div>
+            <div class="guardrails-grid" id="guardrailsContainer">
+                <!-- Generated by JS -->
+            </div>
+        </div>
+
+        <!-- Charts and Audit Feed -->
+        <div class="content-grid">
+            <div>
+                <div class="chart-container">
+                    <div class="chart-title">📊 Request Trends (Last 24 Hours)</div>
+                    <div class="chart-wrapper">
+                        <canvas id="requestsChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">⚠️ Error Trends (Last 24 Hours)</div>
+                    <div class="chart-wrapper">
+                        <canvas id="errorsChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">💰 Cost Breakdown by Tool</div>
+                    <div class="chart-wrapper">
+                        <canvas id="costChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="audit-feed">
+                    <div class="audit-feed-title">📋 Audit Trail</div>
+                    <div id="auditTrail">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model Tiers -->
+        <div class="model-tiers">
+            <div class="card-title">🤖 Model Tier Usage</div>
+            <div id="modelTiersContainer">
+                <!-- Generated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8001/api';
+        let dashboardData = null;
+        let requestsChart = null;
+        let errorsChart = null;
+        let costChart = null;
+
+        // Get deployment ID from URL or environment
+        const deploymentId = new URLSearchParams(window.location.search).get('deployment_id') || 'unknown';
+
+        function goBack() {
+            window.history.back();
+        }
+
+        // Initialize particles
+        function initializeParticles() {
+            const container = document.getElementById('particlesContainer');
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                const size = Math.random() * 100 + 50;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDuration = (Math.random() * 20 + 20) + 's';
+                particle.style.animationDelay = Math.random() * 5 + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        // Fetch dashboard data
+        async function fetchDashboardData() {
+            try {
+                const response = await fetch(`${API_BASE}/dashboard`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                dashboardData = await response.json();
+                updateUI();
+                document.getElementById('statusText').textContent = 'Connected';
+                document.getElementById('statusText').parentElement.querySelector('.status-dot').style.background = '#22c55e';
+            } catch (error) {
+                console.error('Failed to fetch dashboard:', error);
+                document.getElementById('statusText').textContent = 'Offline';
+                document.getElementById('statusText').parentElement.querySelector('.status-dot').style.background = '#ef4444';
+            }
+        }
+
+        // Update UI with data
+        function updateUI() {
+            if (!dashboardData) return;
+
+            // Deployment name
+            document.getElementById('deploymentName').textContent = `Deployment: ${dashboardData.deployment_id}`;
+
+            // Health status
+            const healthStatus = dashboardData.metrics?.health_status || 'unknown';
+            document.getElementById('healthStatus').textContent = healthStatus.toUpperCase();
+
+            document.getElementById('uptimePercent').textContent = (dashboardData.metrics?.uptime_percent || 0).toFixed(1) + '%';
+            document.getElementById('requestsHour').textContent = (dashboardData.metrics?.total_requests_hour || 0).toLocaleString();
+            document.getElementById('errorRate').textContent = ((dashboardData.metrics?.error_count_hour || 0) / Math.max(dashboardData.metrics?.total_requests_hour || 1, 1) * 100).toFixed(2) + '%';
+            document.getElementById('costToday').textContent = '$' + (dashboardData.metrics?.cost_usd_today || 0).toFixed(2);
+            document.getElementById('costMonth').textContent = '$' + (dashboardData.metrics?.cost_usd_month || 0).toFixed(2);
+
+            // Guardrails
+            renderGuardrails();
+
+            // Audit trail
+            renderAuditTrail();
+
+            // Model tiers
+            renderModelTiers();
+
+            // Charts
+            updateCharts();
+
+            document.getElementById('syncStatus').textContent = new Date().toLocaleTimeString();
+        }
+
+        // Render guardrails
+        function renderGuardrails() {
+            const container = document.getElementById('guardrailsContainer');
+            container.innerHTML = '';
+
+            const guardrails = dashboardData.metrics?.guardrails || {};
+            const guardrailTypes = Object.keys(guardrails);
+
+            if (guardrailTypes.length === 0) {
+                container.innerHTML = '<div style="grid-column: 1/-1; padding: 20px; text-align: center; color: #64748b;">No guardrail data available</div>';
+                return;
+            }
+
+            guardrailTypes.forEach(name => {
+                const detail = guardrails[name];
+                const card = document.createElement('div');
+                card.className = 'guardrail-card';
+
+                const blockRate = detail.requests_total > 0
+                    ? ((detail.requests_blocked / detail.requests_total) * 100).toFixed(2)
+                    : 0;
+
+                card.innerHTML = `
+                    <div class="guardrail-name">${name}</div>
+                    <div class="guardrail-metrics">
+                        <div class="metric-small">
+                            <div class="metric-label-small">Total Requests</div>
+                            <div class="metric-value-small">${(detail.requests_total || 0).toLocaleString()}</div>
+                        </div>
+                        <div class="metric-small">
+                            <div class="metric-label-small">Blocked</div>
+                            <div class="metric-value-small">${(detail.requests_blocked || 0).toLocaleString()}</div>
+                        </div>
+                        <div class="metric-small">
+                            <div class="metric-label-small">Block Rate</div>
+                            <div class="metric-value-small">${blockRate}%</div>
+                        </div>
+                        <div class="metric-small">
+                            <div class="metric-label-small">Error Rate</div>
+                            <div class="metric-value-small">${((detail.error_rate || 0) * 100).toFixed(2)}%</div>
+                        </div>
+                    </div>
+                    <div class="latency-box">
+                        <div><span>P50 Latency:</span> <span>${(detail.p50_latency_ms || 0).toFixed(1)}ms</span></div>
+                        <div><span>P95 Latency:</span> <span>${(detail.p95_latency_ms || 0).toFixed(1)}ms</span></div>
+                        <div><span>P99 Latency:</span> <span>${(detail.p99_latency_ms || 0).toFixed(1)}ms</span></div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        // Render audit trail
+        function renderAuditTrail() {
+            const container = document.getElementById('auditTrail');
+            container.innerHTML = '';
+
+            const events = dashboardData.recent_events || [];
+
+            if (events.length === 0) {
+                container.innerHTML = '<div style="padding: 20px; text-align: center; color: #64748b; font-size: 12px;">No recent events</div>';
+                return;
+            }
+
+            events.slice(0, 50).forEach(event => {
+                const item = document.createElement('div');
+                item.className = 'audit-item';
+
+                const timestamp = new Date(event.timestamp).toLocaleTimeString();
+
+                item.innerHTML = `
+                    <div class="audit-time">${timestamp}</div>
+                    <div class="audit-action">${event.event_type || 'event'}</div>
+                    <div class="audit-detail">${event.message || 'No details'}</div>
+                `;
+
+                container.appendChild(item);
+            });
+        }
+
+        // Render model tiers
+        function renderModelTiers() {
+            const container = document.getElementById('modelTiersContainer');
+            container.innerHTML = '';
+
+            // Sample model tiers (would come from API in real implementation)
+            const modelMetrics = dashboardData.metrics?.active_models || 0;
+
+            if (modelMetrics === 0) {
+                container.innerHTML = '<div style="padding: 20px; text-align: center; color: #64748b;">No model tier data</div>';
+                return;
+            }
+
+            // This is a placeholder - real data would come from metrics
+            const tiers = [
+                { name: 'tier0-codex', requests: 5200, cost: 12.50, tokens: 45000 },
+                { name: 'tier1-deepseek', requests: 3100, cost: 8.30, tokens: 32000 },
+                { name: 'tier2-deepseek', requests: 1800, cost: 4.20, tokens: 18000 },
+                { name: 'tier3-deepseek', requests: 900, cost: 2.15, tokens: 9000 },
+            ];
+
+            tiers.forEach(tier => {
+                const item = document.createElement('div');
+                item.className = 'model-tier-item';
+
+                item.innerHTML = `
+                    <div class="model-tier-name">${tier.name}</div>
+                    <div class="model-tier-stats">
+                        <div class="model-tier-stat">
+                            Requests: <span class="model-tier-stat-value">${tier.requests.toLocaleString()}</span>
+                        </div>
+                        <div class="model-tier-stat">
+                            Tokens: <span class="model-tier-stat-value">${tier.tokens.toLocaleString()}</span>
+                        </div>
+                        <div class="model-tier-stat">
+                            Cost: <span class="model-tier-stat-value">$${tier.cost.toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(item);
+            });
+        }
+
+        // Update charts
+        function updateCharts() {
+            // Request trends chart
+            const requestsCtx = document.getElementById('requestsChart').getContext('2d');
+            if (requestsChart) requestsChart.destroy();
+
+            requestsChart = new Chart(requestsCtx, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+                    datasets: [{
+                        label: 'Requests',
+                        data: [1200, 1500, 1100, 2100, 1800, 1600, 1400],
+                        borderColor: '#00d4ff',
+                        backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#00d4ff',
+                        pointBorderColor: 'transparent',
+                        pointRadius: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+
+            // Error trends chart
+            const errorsCtx = document.getElementById('errorsChart').getContext('2d');
+            if (errorsChart) errorsChart.destroy();
+
+            errorsChart = new Chart(errorsCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+                    datasets: [{
+                        label: 'Errors',
+                        data: [5, 8, 3, 12, 6, 4, 2],
+                        backgroundColor: '#9d4edd',
+                        borderRadius: 6,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+
+            // Cost by tool chart
+            const costCtx = document.getElementById('costChart').getContext('2d');
+            if (costChart) costChart.destroy();
+
+            costChart = new Chart(costCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['tier0-codex', 'tier1-deepseek', 'tier2-deepseek', 'tier3-deepseek'],
+                    datasets: [{
+                        data: [12.50, 8.30, 4.20, 2.15],
+                        backgroundColor: [
+                            '#00d4ff',
+                            '#9d4edd',
+                            '#f59f00',
+                            '#22c55e'
+                        ],
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#94a3b8', font: { size: 12 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Periodic refresh
+        function startAutoRefresh() {
+            fetchDashboardData();
+            setInterval(fetchDashboardData, 5000);
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeParticles();
+            startAutoRefresh();
+        });
+    </script>
+</body>
+</html>

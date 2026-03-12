@@ -1,0 +1,15 @@
+*.pyc
+__pycache__
+.pytest_cache
+*.egg-info
+dist
+build
+.venv
+venv
+*.log
+*.db
+*.json.backup
+data.db
+admin_dashboard/logs/
+admin_dashboard/venv/
+.DS_Store

@@ -1,0 +1,31 @@
+{
+  "deployments": [
+    {
+      "id": "neo-toshiba",
+      "name": "Neo Toshiba",
+      "host": "192.168.1.33",
+      "metrics_port": 8001,
+      "admin_port": 8001,
+      "region": "Singapore",
+      "model_tiers": ["codex-tier0", "deepseek-tier1", "deepseek-tier2", "deepseek-tier3"]
+    },
+    {
+      "id": "mba2",
+      "name": "MBA2 (Sarah)",
+      "host": "192.168.1.56",
+      "metrics_port": 8001,
+      "admin_port": 8001,
+      "region": "Singapore",
+      "model_tiers": ["sarah-main"]
+    },
+    {
+      "id": "agent3",
+      "name": "Agent 3",
+      "host": "192.168.1.100",
+      "metrics_port": 8001,
+      "admin_port": 8001,
+      "region": "Singapore (Planned)",
+      "model_tiers": ["codex-tier0", "deepseek-tier1-3"]
+    }
+  ]
+}

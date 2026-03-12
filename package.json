@@ -1,0 +1,24 @@
+{
+  "name": "openclaw-mission-control",
+  "version": "4.1.0",
+  "description": "OpenClaw AaaS Master & Admin Dashboards",
+  "main": "index.html",
+  "scripts": {
+    "dev": "python -m uvicorn app:app --reload --port 8000",
+    "admin-dev": "cd admin_dashboard && python -m uvicorn app:app --reload --port 8001",
+    "test": "bash test-e2e.sh",
+    "build": "echo 'Build complete'",
+    "start": "python -m uvicorn app:app --host 0.0.0.0 --port 8000"
+  },
+  "keywords": [
+    "openclaw",
+    "monitoring",
+    "dashboard",
+    "aas"
+  ],
+  "author": "OpenClaw Team",
+  "license": "MIT",
+  "engines": {
+    "node": "18.x"
+  }
+}

@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw Mission Control - Master Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #15152b 50%, #0f1425 100%);
+            min-height: 100vh;
+            color: #ffffff;
+        }
+
+        .particles-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        .particle {
+            position: absolute;
+            background: radial-gradient(circle, rgba(100, 200, 255, 0.5), transparent);
+            border-radius: 50%;
+            animation: float-particle linear infinite;
+        }
+
+        @keyframes float-particle {
+            0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(100px); opacity: 0; }
+        }
+
+        .header {
+            padding: 30px 40px;
+            background: rgba(20, 20, 40, 0.5);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(100, 150, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #00d4ff, #9d4edd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            50% { opacity: 0.8; box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        .deployment-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .deployment-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 28px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .deployment-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(0, 212, 255, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 212, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .deployment-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 16px;
+        }
+
+        .deployment-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #00d4ff;
+            margin: 4px 0;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .deployment-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 12px;
+            font-size: 12px;
+            color: #22c55e;
+        }
+
+        .deployment-status.offline {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .events-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 28px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 20px;
+        }
+
+        .event-item {
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid rgba(0, 212, 255, 0.3);
+            margin-bottom: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .event-item.critical {
+            border-left-color: #ef4444;
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        .event-time {
+            color: #64748b;
+            font-size: 10px;
+            margin-bottom: 4px;
+        }
+
+        .event-type {
+            color: #00d4ff;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .event-detail {
+            color: #94a3b8;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 28px;
+            margin-bottom: 24px;
+        }
+
+        .admin-link {
+            color: #00d4ff;
+            text-decoration: none;
+            padding: 8px 12px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-block;
+            margin-top: 12px;
+        }
+
+        .admin-link:hover {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: rgba(0, 212, 255, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .deployment-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles-bg" id="particlesContainer"></div>
+
+    <div class="header">
+        <div class="logo">🎛️ OpenClaw Mission Control</div>
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-dot"></div>
+                <span id="statusText">Initializing...</span>
+            </div>
+            <div class="status-item">
+                <span id="lastSync">Syncing...</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Deployment Cards -->
+        <div class="deployment-cards" id="deploymentsContainer">
+            <!-- Generated by JS -->
+        </div>
+
+        <!-- Recent Events -->
+        <div class="events-section">
+            <div class="section-title">🚨 Recent Critical Events</div>
+            <div id="eventsContainer" style="max-height: 400px; overflow-y: auto;">
+                <!-- Generated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin + '/api';
+
+        let dashboardData = null;
+
+        function initializeParticles() {
+            const container = document.getElementById('particlesContainer');
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                const size = Math.random() * 100 + 50;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDuration = (Math.random() * 20 + 20) + 's';
+                particle.style.animationDelay = Math.random() * 5 + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        async function fetchDashboardData() {
+            try {
+                // Fetch from master dashboard API
+                const response = await fetch(`${API_BASE}/master/dashboard` || `${API_BASE}/dashboard`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+                dashboardData = data;
+                updateUI();
+                document.getElementById('statusText').textContent = 'Connected';
+                document.getElementById('statusText').parentElement.querySelector('.status-dot').style.background = '#22c55e';
+            } catch (error) {
+                console.error('Failed to fetch dashboard:', error);
+                document.getElementById('statusText').textContent = 'Offline';
+                document.getElementById('statusText').parentElement.querySelector('.status-dot').style.background = '#ef4444';
+
+                // Try fallback: fetch individual deployments
+                try {
+                    const depResponse = await fetch(`${API_BASE}/master/deployments` || `${API_BASE}/deployments`);
+                    if (depResponse.ok) {
+                        dashboardData = await depResponse.json();
+                        updateUI();
+                    }
+                } catch (e) {
+                    console.error('Fallback also failed:', e);
+                    renderOfflineState();
+                }
+            }
+        }
+
+        function updateUI() {
+            if (!dashboardData) return;
+
+            renderDeployments();
+            renderEvents();
+
+            document.getElementById('lastSync').textContent = new Date().toLocaleTimeString();
+        }
+
+        function renderDeployments() {
+            const container = document.getElementById('deploymentsContainer');
+            container.innerHTML = '';
+
+            const deployments = dashboardData.deployments || [];
+
+            if (deployments.length === 0) {
+                container.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: #64748b;">No deployments configured</div>';
+                return;
+            }
+
+            deployments.forEach(dep => {
+                const metrics = dep.metrics || {};
+                const isOnline = dep.status === 'online';
+
+                const card = document.createElement('div');
+                card.className = 'deployment-card';
+
+                card.innerHTML = `
+                    <div class="deployment-name">${dep.id}</div>
+                    <div class="deployment-stats">
+                        <div class="stat">
+                            <div class="stat-label">Uptime</div>
+                            <div class="stat-value">${(metrics.uptime_percent || 99.5).toFixed(1)}%</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Requests/hr</div>
+                            <div class="stat-value">${(metrics.requests_hour || 0).toLocaleString()}</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Error Rate</div>
+                            <div class="stat-value">${((metrics.error_rate || 0) * 100).toFixed(2)}%</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Cost Today</div>
+                            <div class="stat-value">$${(metrics.cost_usd_today || 0).toFixed(2)}</div>
+                        </div>
+                    </div>
+                    <div class="deployment-status ${isOnline ? '' : 'offline'}">
+                        <div style="width: 8px; height: 8px; border-radius: 50%; background: currentColor;"></div>
+                        ${isOnline ? 'Online' : 'Offline'} ${dep.last_sync ? ' · Last sync: ' + new Date(dep.last_sync).toLocaleTimeString() : ''}
+                    </div>
+                    <a class="admin-link" href="#admin/${dep.id}">View Details →</a>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function renderEvents() {
+            const container = document.getElementById('eventsContainer');
+            container.innerHTML = '';
+
+            const events = dashboardData.critical_events || [];
+
+            if (events.length === 0) {
+                container.innerHTML = '<div style="padding: 20px; text-align: center; color: #64748b; font-size: 12px;">No critical events</div>';
+                return;
+            }
+
+            events.slice(0, 20).forEach(event => {
+                const item = document.createElement('div');
+                item.className = `event-item ${event.severity === 'critical' ? 'critical' : ''}`;
+
+                const timestamp = new Date(event.timestamp || event.received_at).toLocaleTimeString();
+
+                item.innerHTML = `
+                    <div class="event-time">${timestamp}</div>
+                    <div class="event-type">${event.event_type || 'Unknown'}</div>
+                    <div class="event-detail">${event.deployment_id || 'Unknown'} · ${event.details?.model_id || event.details?.anomaly_type || 'System'}</div>
+                `;
+
+                container.appendChild(item);
+            });
+        }
+
+        function renderOfflineState() {
+            const container = document.getElementById('deploymentsContainer');
+            container.innerHTML = `
+                <div style="grid-column: 1/-1; padding: 40px; text-align: center;">
+                    <div style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
+                        ⚠️ Unable to connect to dashboard API
+                    </div>
+                    <div style="color: #94a3b8; font-size: 12px;">
+                        Demo mode with simulated data:
+                    </div>
+                    <div style="margin-top: 20px;" id="simulatedDeployments"></div>
+                </div>
+            `;
+
+            // Render demo data
+            const demoData = {
+                deployments: [
+                    {
+                        id: "neo-toshiba",
+                        status: "online",
+                        metrics: { uptime_percent: 99.8, error_rate: 0.001, cost_usd_today: 12.45 }
+                    },
+                    {
+                        id: "mba2",
+                        status: "online",
+                        metrics: { uptime_percent: 99.5, error_rate: 0.002, cost_usd_today: 8.20 }
+                    },
+                    {
+                        id: "agent3",
+                        status: "offline",
+                        metrics: { uptime_percent: 0, error_rate: 0, cost_usd_today: 0 }
+                    }
+                ]
+            };
+
+            document.getElementById('deploymentsContainer').innerHTML = '';
+            dashboardData = demoData;
+            renderDeployments();
+        }
+
+        function startAutoRefresh() {
+            fetchDashboardData();
+            setInterval(fetchDashboardData, 5000);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeParticles();
+            startAutoRefresh();
+        });
+    </script>
+</body>
+</html>

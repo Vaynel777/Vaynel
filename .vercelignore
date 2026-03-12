@@ -1,0 +1,16 @@
+.git
+.gitignore
+node_modules
+*.pyc
+__pycache__
+.pytest_cache
+*.egg-info
+dist
+build
+.venv
+venv
+*.log
+test-e2e.sh
+admin_dashboard/start.sh
+admin_dashboard/deploy.sh
+phase4_integration
