@@ -1,0 +1,9 @@
+run = "python3 serve_test.py"
+modules = ["python-3.10"]
+
+[packager]
+language = "python3"
+ignoredPaths = [".git", "__pycache__"]
+
+[env]
+PYTHONUNBUFFERED = "1"
