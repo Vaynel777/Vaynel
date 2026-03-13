@@ -1,6 +1,20 @@
 {
   "buildCommand": "pip install -r requirements.txt",
-  "outputDirectory": ".",
+  "functions": {
+    "api/index.py": {
+      "runtime": "python3.9"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
   "env": {
     "PYTHONUNBUFFERED": "1"
   }
